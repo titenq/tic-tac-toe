@@ -1,21 +1,21 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import Peer, { type DataConnection } from 'peerjs';
-import i18n from 'i18next';
-import { initReactI18next, useTranslation } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+import { useState, useEffect, useRef, useCallback } from "react";
+import Peer, { type DataConnection } from "peerjs";
+import i18n from "i18next";
+import { initReactI18next, useTranslation } from "react-i18next";
+import LanguageDetector from "i18next-browser-languagedetector";
 
-import './App.css';
-import translations from './translations/translations';
-import type { PlayerSymbol } from './types/types';
-import type { Particle } from './interfaces/interfaces';
+import "./App.css";
+import translations from "./translations/translations";
+import type { PlayerSymbol } from "./types/types";
+import type { Particle } from "./interfaces/interfaces";
 import {
   MessageType,
   SoundEffect,
   GameStatus,
   ROOM_PREFIX,
   WINNING_COMBINATIONS,
-} from './constants/constants';
-import isGameMessage from './helpers/typeGuards';
+} from "./constants/constants";
+import isGameMessage from "./helpers/typeGuards";
 
 i18n
   .use(LanguageDetector)
@@ -26,6 +26,10 @@ i18n
     interpolation: {
       escapeValue: false,
     },
+    detection: {
+      order: ["localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
+    },
   });
 
 const TicTacToe: React.FC = () => {
@@ -35,15 +39,15 @@ const TicTacToe: React.FC = () => {
   const [board, setBoard] = useState<PlayerSymbol[]>(Array(9).fill(null));
   const [mySymbol, setMySymbol] = useState<PlayerSymbol>(null);
   const [isMyTurn, setIsMyTurn] = useState(false);
-  const [winner, setWinner] = useState<PlayerSymbol | 'Draw'>(null);
+  const [winner, setWinner] = useState<PlayerSymbol | "Draw">(null);
   const [score, setScore] = useState({ X: 0, O: 0 });
   const [chatMessages, setChatMessages] = useState<{
     text: string,
     isMe: boolean,
     isSystem?: boolean,
   }[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [nextStarter, setNextStarter] = useState<PlayerSymbol>('X');
+  const [chatInput, setChatInput] = useState("");
+  const [nextStarter, setNextStarter] = useState<PlayerSymbol>("X");
   const [particles, setParticles] = useState<Particle[]>([]);
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [isClicking, setIsClicking] = useState(false);
@@ -62,7 +66,7 @@ const TicTacToe: React.FC = () => {
   }, [status]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
   useEffect(() => {
@@ -82,19 +86,19 @@ const TicTacToe: React.FC = () => {
     const down = () => setIsClicking(true);
     const up = () => setIsClicking(false);
 
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mousedown', down);
-    window.addEventListener('mouseup', up);
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mousedown", down);
+    window.addEventListener("mouseup", up);
 
     return () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mousedown', down);
-      window.removeEventListener('mouseup', up);
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mousedown", down);
+      window.removeEventListener("mouseup", up);
     };
   }, []);
 
   const createExplosion = useCallback((winnerSymbol: PlayerSymbol) => {
-    const color = winnerSymbol === 'X' ? '#ff2d55' : '#007aff';
+    const color = winnerSymbol === "X" ? "#ff2d55" : "#007aff";
     const newParticles = Array
       .from({ length: 40 })
       .map((_, i) => ({
@@ -125,18 +129,25 @@ const TicTacToe: React.FC = () => {
         osc.frequency.setValueAtTime(523, ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1046, ctx.currentTime + 0.5);
       } else {
-        osc.type = 'square'; osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.type = "square"; osc.frequency.setValueAtTime(220, ctx.currentTime);
       }
 
-      osc.start(); osc.stop(ctx.currentTime + (type === SoundEffect.VICTORY ? 0.5 : 0.1));
+      osc.start();
+      osc.stop(ctx.currentTime + (type === SoundEffect.VICTORY ? 0.5 : 0.1));
     } catch (error) {
       console.error(error);
     }
   }, []);
 
-  const renderSymbol = (symbol: PlayerSymbol | 'Draw') => {
-    if (symbol === 'X') return '✕';
-    if (symbol === 'O') return '◯';
+  const renderSymbol = (symbol: PlayerSymbol | "Draw") => {
+    if (symbol === "X") {
+      return "✕";
+    }
+
+    if (symbol === "O") {
+      return "◯";
+    }
+
     return symbol;
   };
 
@@ -151,7 +162,7 @@ const TicTacToe: React.FC = () => {
       }
     }
 
-    return squares.includes(null) ? null : 'Draw';
+    return squares.includes(null) ? null : "Draw";
   }, []);
 
   const endGame = useCallback((newBoard: PlayerSymbol[]) => {
@@ -160,7 +171,7 @@ const TicTacToe: React.FC = () => {
     if (gameResult) {
       setWinner(gameResult);
 
-      if (gameResult !== 'Draw') {
+      if (gameResult !== "Draw") {
         setScore((prevScore) => ({
           ...prevScore,
           [gameResult]: prevScore[gameResult] + 1,
@@ -182,11 +193,11 @@ const TicTacToe: React.FC = () => {
         setStatus(GameStatus.PLAYING);
         setBoard(Array(9).fill(null));
         setWinner(null);
-        setNextStarter('O');
-        setIsMyTurn(mySymbolRef.current === 'X');
+        setNextStarter("O");
+        setIsMyTurn(mySymbolRef.current === "X");
       }
 
-      conn.on('data', (data: unknown) => {
+      conn.on("data", (data: unknown) => {
         if (!mounted || !isGameMessage(data)) {
           return;
         }
@@ -217,20 +228,20 @@ const TicTacToe: React.FC = () => {
           const amINext = data.nextToMove === mySymbolRef.current;
 
           setIsMyTurn(amINext);
-          setNextStarter(data.nextToMove === 'X' ? 'O' : 'X');
+          setNextStarter(data.nextToMove === "X" ? "O" : "X");
         } else if (data.type === MessageType.TYPING) {
           setIsOpponentTyping(data.isTyping);
         }
       });
 
-      conn.on('close', () => {
+      conn.on("close", () => {
         if (!mounted) {
           return;
         }
 
         setStatus(GameStatus.DISCONNECTED);
         setChatMessages(prev => [...prev, {
-          text: i18n.t('opponentLeft'),
+          text: i18n.t("opponentLeft"),
           isMe: false,
           isSystem: true,
         }]);
@@ -239,9 +250,9 @@ const TicTacToe: React.FC = () => {
       if (conn.peerConnection) {
         conn.peerConnection.oniceconnectionstatechange = () => {
           if (
-            conn.peerConnection?.iceConnectionState === 'disconnected' ||
-            conn.peerConnection?.iceConnectionState === 'failed' ||
-            conn.peerConnection?.iceConnectionState === 'closed'
+            conn.peerConnection?.iceConnectionState === "disconnected" ||
+            conn.peerConnection?.iceConnectionState === "failed" ||
+            conn.peerConnection?.iceConnectionState === "closed"
           ) {
             conn.close();
 
@@ -253,7 +264,7 @@ const TicTacToe: React.FC = () => {
       }
     };
 
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener("beforeunload", () => {
       connectionRef.current?.close();
       activePeer?.destroy();
     });
@@ -271,12 +282,12 @@ const TicTacToe: React.FC = () => {
 
       activePeer = peer;
 
-      peer.on('error', (error) => {
+      peer.on("error", (error) => {
         if (!mounted) {
           return;
         }
 
-        if (error.type === 'unavailable-id') {
+        if (error.type === "unavailable-id") {
           peer.destroy();
 
           const guestPeer = new Peer();
@@ -285,7 +296,7 @@ const TicTacToe: React.FC = () => {
 
           peerRef.current = guestPeer;
 
-          guestPeer.on('open', () => {
+          guestPeer.on("open", () => {
             if (!mounted) {
               return;
             }
@@ -301,7 +312,7 @@ const TicTacToe: React.FC = () => {
               }
             }, 3000);
 
-            conn.on('open', () => {
+            conn.on("open", () => {
               clearTimeout(connectionTimeout);
 
               if (!mounted) {
@@ -313,24 +324,24 @@ const TicTacToe: React.FC = () => {
               const handshakeHandler = (data: unknown) => {
                 if (isGameMessage(data)) {
                   if (data.type === MessageType.FULL) {
-                    conn.off('data', handshakeHandler);
-                    conn.removeAllListeners('close');
+                    conn.off("data", handshakeHandler);
+                    conn.removeAllListeners("close");
                     conn.close();
                     guestPeer.destroy();
                     tryJoin(roomIndex + 1);
                   } else if (data.type === MessageType.WELCOME) {
-                    conn.off('data', handshakeHandler);
-                    setMySymbol('O');
+                    conn.off("data", handshakeHandler);
+                    setMySymbol("O");
                     setup(conn);
                   }
                 }
               };
 
-              conn.on('data', handshakeHandler);
+              conn.on("data", handshakeHandler);
               conn.send({ type: MessageType.HELLO });
             });
 
-            conn.on('close', () => {
+            conn.on("close", () => {
               if (statusRef.current === GameStatus.SEARCHING || statusRef.current === GameStatus.CONNECTING) {
                 guestPeer.destroy();
                 tryJoin(roomIndex + 1);
@@ -342,7 +353,7 @@ const TicTacToe: React.FC = () => {
         }
       });
 
-      peer.on('open', () => {
+      peer.on("open", () => {
         if (!mounted) {
           return;
         }
@@ -350,12 +361,12 @@ const TicTacToe: React.FC = () => {
         peerRef.current = peer;
 
         setStatus(GameStatus.WAITING);
-        setMySymbol('X');
+        setMySymbol("X");
 
-        peer.on('connection', (conn) => {
+        peer.on("connection", (conn) => {
 
           if (statusRef.current !== GameStatus.WAITING || isHandlingConnection.current) {
-            conn.on('open', () => {
+            conn.on("open", () => {
               conn.send({ type: MessageType.FULL });
               setTimeout(() => conn.close(), 500);
             });
@@ -369,7 +380,7 @@ const TicTacToe: React.FC = () => {
           const hostHandshakeHandler = (data: unknown) => {
             if (isGameMessage(data)) {
               if (data.type === MessageType.HELLO) {
-                conn.off('data', hostHandshakeHandler);
+                conn.off("data", hostHandshakeHandler);
                 conn.send({ type: MessageType.WELCOME });
                 setup(conn);
                 isHandlingConnection.current = false;
@@ -377,9 +388,9 @@ const TicTacToe: React.FC = () => {
             }
           };
 
-          conn.on('data', hostHandshakeHandler);
+          conn.on("data", hostHandshakeHandler);
 
-          conn.on('close', () => {
+          conn.on("close", () => {
             if (statusRef.current === GameStatus.CONNECTING) {
               setStatus(GameStatus.WAITING);
               isHandlingConnection.current = false;
@@ -402,8 +413,11 @@ const TicTacToe: React.FC = () => {
     if (status !== GameStatus.PLAYING || !isMyTurn || board[i] || winner) {
       return;
     }
+
     playSound(SoundEffect.CLICK);
+
     const newBoard = [...board];
+
     newBoard[i] = mySymbol;
     setBoard(newBoard);
     setIsMyTurn(false);
@@ -420,13 +434,15 @@ const TicTacToe: React.FC = () => {
     setWinner(null);
     setIsMyTurn(mySymbol === starter);
 
-    setNextStarter(starter === 'X' ? 'O' : 'X');
+    setNextStarter(starter === "X" ? "O" : "X");
 
     connectionRef.current?.send({ type: MessageType.RESET, nextToMove: starter });
   };
 
   useEffect(() => {
-    if (status !== GameStatus.PLAYING || !connectionRef.current) return;
+    if (status !== GameStatus.PLAYING || !connectionRef.current) {
+      return;
+    }
 
     const isTyping = chatInput.length > 0;
     connectionRef.current.send({ type: MessageType.TYPING, isTyping });
@@ -451,53 +467,53 @@ const TicTacToe: React.FC = () => {
             style={{
               backgroundColor: p.color,
               boxShadow: `0 0 10px ${p.color}`,
-              '--tx': `${p.x}px`,
-              '--ty': `${p.y}px`
+              "--tx": `${p.x}px`,
+              "--ty": `${p.y}px`
             } as React.CSSProperties}
           />
         ))}
       </div>
 
       <div
-        className={`custom-cursor ${isClicking ? 'clicking' : ''}`}
+        className={`custom-cursor ${isClicking ? "clicking" : ""}`}
         style={{ left: cursorPos.x, top: cursorPos.y }}
       >
-        <span className="custom-cursor-symbol">{renderSymbol(mySymbol) || '?'}</span>
+        <span className="custom-cursor-symbol">{renderSymbol(mySymbol) || "?"}</span>
       </div>
 
       <div className="game-section">
-        <h1 className="game-title">{t('title')}</h1>
+        <h1 className="game-title">{t("title")}</h1>
         <div className="hud glass-panel">
           <div className="hud-row">
-            <span>{t('room')} {roomNumber}</span>
+            <span>{t("room")} {roomNumber}</span>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 5 }}>
-            <div style={{ fontSize: '0.75rem', color: '#aaa', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '5px' }}>
-              {t('score')}
+          <div style={{ textAlign: "center", marginTop: 5 }}>
+            <div style={{ fontSize: "0.75rem", color: "#aaa", textTransform: "uppercase", letterSpacing: "2px", marginBottom: "5px" }}>
+              {t("score")}
             </div>
             <div className="hud-title">
-              <span className="hud-symbol x">{renderSymbol('X')}</span>: {score.X} &nbsp;<span style={{ opacity: 0.3 }}>|</span>&nbsp; <span className="hud-symbol o">{renderSymbol('O')}</span>: {score.O}
+              <span className="hud-symbol x">{renderSymbol("X")}</span>: {score.X} &nbsp;<span style={{ opacity: 0.3 }}>|</span>&nbsp; <span className="hud-symbol o">{renderSymbol("O")}</span>: {score.O}
             </div>
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: 10 }}>
+          <div style={{ textAlign: "center", marginTop: 10 }}>
             <span className="status-badge" style={{
-              color: winner ? 'var(--neon-green)' : (isMyTurn ? 'var(--neon-blue)' : '#888'),
-              border: `1px solid ${winner ? 'var(--neon-green)' : (isMyTurn ? 'var(--neon-blue)' : 'transparent')}`
+              color: winner ? "var(--neon-green)" : (isMyTurn ? "var(--neon-blue)" : "#888"),
+              border: `1px solid ${winner ? "var(--neon-green)" : (isMyTurn ? "var(--neon-blue)" : "transparent")}`
             }}>
               {status === GameStatus.DISCONNECTED ? (
-                <span style={{ color: 'red' }}>{t('opponentLeft')}</span>
+                <span style={{ color: "red" }}>{t("opponentLeft")}</span>
               ) : winner ? (
-                winner === 'Draw' ? t('draw') : t('win', { symbol: renderSymbol(winner as PlayerSymbol) })
-              ) : (status === GameStatus.PLAYING ? (isMyTurn ? t('yourTurn') : t('opponentTurn')) : (status === GameStatus.SEARCHING ? t('searching') : (status === GameStatus.CONNECTING ? t('connecting') : t('waiting'))))}
+                winner === "Draw" ? t("draw") : t("win", { symbol: renderSymbol(winner as PlayerSymbol) })
+              ) : (status === GameStatus.PLAYING ? (isMyTurn ? t("yourTurn") : t("opponentTurn")) : (status === GameStatus.SEARCHING ? t("searching") : (status === GameStatus.CONNECTING ? t("connecting") : t("waiting"))))}
             </span>
           </div>
         </div>
 
         {status === GameStatus.DISCONNECTED && (
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 10 }}>
-            <button className="reset-btn" onClick={() => window.location.reload()}>{t('joinNew')}</button>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", zIndex: 10 }}>
+            <button className="reset-btn" onClick={() => window.location.reload()}>{t("joinNew")}</button>
           </div>
         )}
 
@@ -505,20 +521,20 @@ const TicTacToe: React.FC = () => {
           {board.map((symbol, i) => <div key={i} className={`cell ${symbol}`} onClick={() => handleCellClick(i)}>{renderSymbol(symbol)}</div>)}
         </div>
 
-        {winner && <button className="reset-btn" onClick={handleReset}>{t('reset')}</button>}
+        {winner && <button className="reset-btn" onClick={handleReset}>{t("reset")}</button>}
       </div>
 
       <div className="side-section">
         <div className="flags">
-          <span className={`flag ${i18n.language.startsWith('en') ? 'active' : ''}`} onClick={() => i18n.changeLanguage('en')}>🇺🇸</span>
-          <span className={`flag ${i18n.language.startsWith('pt') ? 'active' : ''}`} onClick={() => i18n.changeLanguage('pt')}>🇧🇷</span>
-          <span className={`flag ${i18n.language.startsWith('es') ? 'active' : ''}`} onClick={() => i18n.changeLanguage('es')}>🇪🇸</span>
+          <span className={`flag ${i18n.language.startsWith("en") ? "active" : ""}`} onClick={() => i18n.changeLanguage("en")}>🇺🇸</span>
+          <span className={`flag ${i18n.language.startsWith("pt") ? "active" : ""}`} onClick={() => i18n.changeLanguage("pt")}>🇧🇷</span>
+          <span className={`flag ${i18n.language.startsWith("es") ? "active" : ""}`} onClick={() => i18n.changeLanguage("es")}>🇪🇸</span>
         </div>
 
         <div className="chat glass-panel">
           <div className="msgs">
             {chatMessages.map((m, i) => (
-              <div key={i} className={`bubble ${m.isSystem ? 'system' : (m.isMe ? 'me' : 'opponent')}`}>
+              <div key={i} className={`bubble ${m.isSystem ? "system" : (m.isMe ? "me" : "opponent")}`}>
                 {m.text}
               </div>
             ))}
@@ -537,9 +553,9 @@ const TicTacToe: React.FC = () => {
             e.preventDefault(); if (!chatInput) return;
             connectionRef.current?.send({ type: MessageType.CHAT, text: chatInput });
             setChatMessages(prev => [...prev, { text: chatInput, isMe: true }]);
-            setChatInput('');
+            setChatInput("");
           }} className="input-area">
-            <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={t('placeholder')} />
+            <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder={t("placeholder")} />
             <button type="submit">💬</button>
           </form>
         </div>
