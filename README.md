@@ -1,6 +1,6 @@
 # Tic Tac Toe - WebRTC
 
-![](https://img.shields.io/github/stars/titenq/tic-tac-toe-webrtc.svg) ![](https://img.shields.io/github/forks/titenq/tic-tac-toe-webrtc.svg) ![](https://img.shields.io/github/issues/titenq/tic-tac-toe-webrtc.svg)
+![](https://img.shields.io/github/stars/titenq/tic-tac-toe.svg) ![](https://img.shields.io/github/forks/titenq/tic-tac-toe.svg) ![](https://img.shields.io/github/issues/titenq/tic-tac-toe.svg)
 
 A classic Tic Tac Toe multiplayer game built with React, TypeScript, and real-time peer-to-peer communication using WebRTC. Play against an opponent anywhere in the world!
 
