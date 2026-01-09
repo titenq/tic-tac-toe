@@ -69,14 +69,12 @@ npm run preview
 
 Feel free to open issues and pull requests for improvements!
 
----
-
 ## 📜 License
 
 This project is licensed under the GPL3.0 License - see the [LICENSE](LICENSE.txt) file for details.
 
-
 <!-- Stargazers generated automatically with npx @titenq/stargazers -->
 ## ⭐ Stargazers
 
-This repository has no stargazers yet. Be the first!
+[<img src="https://avatars.githubusercontent.com/u/18634201?v=4&s=80" width="80" height="80" alt="taffarel55" title="taffarel55" />](https://github.com/taffarel55)
+
