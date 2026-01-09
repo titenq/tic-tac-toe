@@ -278,7 +278,23 @@ const TicTacToe: React.FC = () => {
       setStatus(GameStatus.SEARCHING);
 
       const roomId = `${ROOM_PREFIX}room-${roomIndex}`;
-      const peer = new Peer(roomId);
+      
+      const peerOptions = {
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+          ],
+        },
+        
+        host: '0.peerjs.com',
+        port: 443,
+        path: '/',
+        secure: true,
+      };
+      
+      const peer = new Peer(roomId, peerOptions);
 
       activePeer = peer;
 
@@ -287,30 +303,38 @@ const TicTacToe: React.FC = () => {
           return;
         }
 
+        console.error("Peer Error:", error);
+
         if (error.type === "unavailable-id") {
           peer.destroy();
 
-          const guestPeer = new Peer();
+          const guestId = `guest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const guestPeer = new Peer(guestId, peerOptions);
 
           activePeer = guestPeer;
 
           peerRef.current = guestPeer;
 
-          guestPeer.on("open", () => {
+          guestPeer.on("open", (id) => {
             if (!mounted) {
               return;
             }
 
-            const conn = guestPeer.connect(roomId, { reliable: true });
+            console.log("Guest peer opened with ID:", id);
+
+            const conn = guestPeer.connect(roomId, { 
+              reliable: true,
+              serialization: 'json',
+            });
 
             const connectionTimeout = setTimeout(() => {
-              if (statusRef.current === GameStatus.SEARCHING) {
+              if (statusRef.current === GameStatus.SEARCHING || statusRef.current === GameStatus.CONNECTING) {
                 conn.close();
                 guestPeer.destroy();
 
                 tryJoin(roomIndex + 1);
               }
-            }, 3000);
+            }, 10000);
 
             conn.on("open", () => {
               clearTimeout(connectionTimeout);
@@ -319,6 +343,7 @@ const TicTacToe: React.FC = () => {
                 return;
               }
 
+              console.log("Connection opened");
               setStatus(GameStatus.CONNECTING);
 
               const handshakeHandler = (data: unknown) => {
@@ -341,23 +366,48 @@ const TicTacToe: React.FC = () => {
               conn.send({ type: MessageType.HELLO });
             });
 
+            conn.on("error", (err) => {
+              console.error("Connection error:", err);
+              if (statusRef.current === GameStatus.SEARCHING || statusRef.current === GameStatus.CONNECTING) {
+                conn.close();
+                guestPeer.destroy();
+                tryJoin(roomIndex + 1);
+              }
+            });
+
             conn.on("close", () => {
+              console.log("Connection closed");
               if (statusRef.current === GameStatus.SEARCHING || statusRef.current === GameStatus.CONNECTING) {
                 guestPeer.destroy();
                 tryJoin(roomIndex + 1);
               }
             });
           });
-        } else {
-          console.error("Peer Error:", error);
+        } else if (error.type === "network") {
+          console.error("Network error, retrying...");
+          peer.destroy();
+          setTimeout(() => {
+            if (mounted) {
+              tryJoin(roomIndex);
+            }
+          }, 2000);
+        } else if (error.type === "server-error") {
+          console.error("Server error, retrying...");
+          peer.destroy();
+          setTimeout(() => {
+            if (mounted) {
+              tryJoin(roomIndex);
+            }
+          }, 2000);
         }
       });
 
-      peer.on("open", () => {
+      peer.on("open", (id) => {
         if (!mounted) {
           return;
         }
 
+        console.log("Peer opened with ID:", id);
         peerRef.current = peer;
 
         setStatus(GameStatus.WAITING);
@@ -390,7 +440,16 @@ const TicTacToe: React.FC = () => {
 
           conn.on("data", hostHandshakeHandler);
 
+          conn.on("error", (err) => {
+            console.error("Host connection error:", err);
+            if (statusRef.current === GameStatus.CONNECTING) {
+              setStatus(GameStatus.WAITING);
+              isHandlingConnection.current = false;
+            }
+          });
+
           conn.on("close", () => {
+            console.log("Host connection closed");
             if (statusRef.current === GameStatus.CONNECTING) {
               setStatus(GameStatus.WAITING);
               isHandlingConnection.current = false;
